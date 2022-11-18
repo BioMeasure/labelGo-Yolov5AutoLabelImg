@@ -72,8 +72,13 @@ class Struct(object):
 
 def distance(p):
     return sqrt(p.x() * p.x() + p.y() * p.y())
-
-
+'''
+#labelimg中的变量名
+def fmtShortcut(text):
+    mod, key = text.split('+', 1)
+    return '<b>%s</b>+<b>%s</b>' % (mod, key)
+'''
+#labelgo中的
 def format_shortcut(text):
     mod, key = text.split('+', 1)
     return '<b>%s</b>+<b>%s</b>' % (mod, key)

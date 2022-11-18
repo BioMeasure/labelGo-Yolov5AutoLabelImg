@@ -2,7 +2,7 @@ import sys
 from libs.constants import DEFAULT_ENCODING
 
 def ustr(x):
-    """py2/py3 unicode helper"""
+    '''py2/py3 unicode helper'''
 
     if sys.version_info < (3, 0, 0):
         from PyQt4.QtCore import QString

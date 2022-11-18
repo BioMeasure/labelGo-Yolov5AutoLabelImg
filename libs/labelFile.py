@@ -39,9 +39,16 @@ class LabelFile(object):
         self.verified = False
 
     def save_create_ml_format(self, filename, shapes, image_path, image_data, class_list, line_color=None, fill_color=None, database_src=None):
+
         img_folder_name = os.path.basename(os.path.dirname(image_path))
         img_file_name = os.path.basename(image_path)
-
+        '''
+        imgFolderPath = os.path.dirname(imagePath)
+        imgFolderName = os.path.split(imgFolderPath)[-1]
+        imgFileName = os.path.basename(imagePath)
+        outputFilePath = "/".join(filename.split("/")[:-1])
+        outputFile = outputFilePath + "/" + imgFolderName + JSON_EXT
+        '''
         image = QImage()
         image.load(image_path)
         image_shape = [image.height(), image.width(),

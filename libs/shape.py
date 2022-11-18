@@ -18,6 +18,7 @@ DEFAULT_SELECT_LINE_COLOR = QColor(255, 255, 255)
 DEFAULT_SELECT_FILL_COLOR = QColor(0, 128, 255, 155)
 DEFAULT_VERTEX_FILL_COLOR = QColor(0, 255, 0, 255)
 DEFAULT_HVERTEX_FILL_COLOR = QColor(255, 0, 0)
+MIN_Y_LABEL = 10
 
 
 class Shape(object):
@@ -32,13 +33,17 @@ class Shape(object):
     select_line_color = DEFAULT_SELECT_LINE_COLOR
     select_fill_color = DEFAULT_SELECT_FILL_COLOR
     vertex_fill_color = DEFAULT_VERTEX_FILL_COLOR
+    #来自labelimg优化库
+    hvertex_fill_color = DEFAULT_HVERTEX_FILL_COLOR
+    #来自labelgo
     h_vertex_fill_color = DEFAULT_HVERTEX_FILL_COLOR
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
+    #labelgo是默认的8，labelimg是个变量
     label_font_size = 8
 
-    def __init__(self, label=None, line_color=None, difficult=False, paint_label=False):
+    def __init__(self, label=None, line_color=None, difficult=False, paintLabel=False):
         self.label = label
         self.points = []
         self.fill = False
@@ -93,6 +98,7 @@ class Shape(object):
             painter.setPen(pen)
 
             line_path = QPainterPath()
+            #vrtx_path = QPainterPath()
             vertex_path = QPainterPath()
 
             line_path.moveTo(self.points[0])
@@ -152,16 +158,30 @@ class Shape(object):
         else:
             assert False, "unsupported vertex shape"
 
+    # wzx：原来的代码是直接找到一个小于epsilon距离的点就返回
+    # 修改为：返回距离小于epsilon且距离point最近的点
+    '''
     def nearest_vertex(self, point, epsilon):
         for i, p in enumerate(self.points):
             if distance(p - point) <= epsilon:
                 return i
         return None
+    '''
+    def nearestVertex(self, point, epsilon):
+        min_idx = None
+        min_dis = 1e10
+        for i, p in enumerate(self.points):
+            dis = distance(p - point)
+            if dis <= epsilon:
+                if dis < min_dis:
+                    min_dis = dis
+                    min_idx = i
+        return min_idx
 
-    def contains_point(self, point):
-        return self.make_path().contains(point)
+    def containsPoint(self, point):
+        return self.makePath().contains(point)
 
-    def make_path(self):
+    def makePath(self):
         path = QPainterPath(self.points[0])
         for p in self.points[1:]:
             path.lineTo(p)

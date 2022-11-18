@@ -7,7 +7,7 @@ except ImportError:
     from PyQt4.QtGui import *
     from PyQt4.QtCore import *
 
-# from PyQt4.QtOpenGL import *
+#from PyQt4.QtOpenGL import *
 
 from libs.shape import Shape
 from libs.utils import distance
@@ -66,7 +66,7 @@ class Canvas(QWidget):
 
         # initialisation for panning
         self.pan_initial_pos = QPoint()
-
+#qcolor与qColor
     def set_drawing_color(self, qcolor):
         self.drawing_line_color = qcolor
         self.drawing_rect_color = qcolor
@@ -161,19 +161,27 @@ class Canvas(QWidget):
             self.repaint()
             return
 
-        # Polygon copy moving.
+        # wzx：取消原来的功能：右键拖拽矩形框复制一个相同的出来
+        # # Polygon copy moving.
+        # if Qt.RightButton & ev.buttons():
+        #    if self.selected_shape_copy and self.prev_point:
+        #        self.override_cursor(CURSOR_MOVE)
+        #        self.bounded_move_shape(self.selected_shape_copy, pos)
+        #        self.repaint()
+        #    elif self.selected_shape:
+        #        self.selected_shape_copy = self.selected_shape.copy()
+        #        self.repaint()
+        #    return
+
+        # wzx：添加新功能：如果有目标框被选中了，无论鼠标在哪，只要拖拽右键，直接将其距离最近的一个顶点拖拽过来，方便调整其位置
         if Qt.RightButton & ev.buttons():
-            if self.selected_shape_copy and self.prev_point:
-                self.override_cursor(CURSOR_MOVE)
-                self.bounded_move_shape(self.selected_shape_copy, pos)
-                self.repaint()
-            elif self.selected_shape:
-                self.selected_shape_copy = self.selected_shape.copy()
-                self.repaint()
-            return
+            if not self.selected_vertex() and self.selectedShape:
+                self.h_vertex = self.selectedShape.nearestVertex(pos, 1000000)
+                self.h_shape = self.selectedShape
 
         # Polygon/Vertex moving.
-        if Qt.LeftButton & ev.buttons():
+        # wzx：允许右键来拖动框的形状
+        if Qt.LeftButton & ev.buttons() or Qt.RightButton & ev.buttons():
             if self.selected_vertex():
                 self.bounded_move_vertex(pos)
                 self.shapeMoved.emit()
@@ -184,6 +192,9 @@ class Canvas(QWidget):
                 self.shapeMoved.emit()
                 self.repaint()
             else:
+                # wzx：但是还是要禁止右键拖动整个图片，只允许左键
+                if Qt.RightButton & ev.buttons():
+                    return
                 # pan
                 delta_x = pos.x() - self.pan_initial_pos.x()
                 delta_y = pos.y() - self.pan_initial_pos.y()
@@ -195,8 +206,9 @@ class Canvas(QWidget):
         # Just hovering over the canvas, 2 possibilities:
         # - Highlight shapes
         # - Highlight vertex
+        # wzx：注释掉了这里的ToolTip提示，因为没有什么用
         # Update shape/vertex fill and tooltip value accordingly.
-        self.setToolTip("Image")
+        #self.setToolTip("Image")
         for shape in reversed([s for s in self.shapes if self.isVisible(s)]):
             # Look for a nearby vertex to highlight. If that fails,
             # check if we happen to be inside a shape.
@@ -207,17 +219,17 @@ class Canvas(QWidget):
                 self.h_vertex, self.h_shape = index, shape
                 shape.highlight_vertex(index, shape.MOVE_VERTEX)
                 self.override_cursor(CURSOR_POINT)
-                self.setToolTip("Click & drag to move point")
-                self.setStatusTip(self.toolTip())
+                #self.setToolTip("Click & drag to move point")
+                #self.setStatusTip(self.toolTip())
                 self.update()
                 break
             elif shape.contains_point(pos):
                 if self.selected_vertex():
                     self.h_shape.highlight_clear()
                 self.h_vertex, self.h_shape = None, shape
-                self.setToolTip(
-                    "Click & drag to move shape '%s'" % shape.label)
-                self.setStatusTip(self.toolTip())
+               # self.setToolTip(
+               #    "Click & drag to move shape '%s'" % shape.label)
+               # self.setStatusTip(self.toolTip())
                 self.override_cursor(CURSOR_GRAB)
                 self.update()
                 break
@@ -243,21 +255,31 @@ class Canvas(QWidget):
                     QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))
                     self.pan_initial_pos = pos
 
+        # wzx：只有在没有任何框被选中时，才能右键选择一个框
+        # 因为这里直接选择最上层的框，如果已经选择了下层的一个，则会重新选择到上层，下层所在的点就没法右键拖拽了
+        # 所以加了这个限制
         elif ev.button() == Qt.RightButton and self.editing():
+            if not self.selectedShape:
             self.select_shape_point(pos)
-            self.prev_point = pos
+         #   self.prev_point = pos
         self.update()
 
     def mouseReleaseEvent(self, ev):
+        # wzx：抬起右键时需要清除目前活跃的顶点，以允许下一次右键拖拽时更新顶点
         if ev.button() == Qt.RightButton:
-            menu = self.menus[bool(self.selected_shape_copy)]
-            self.restore_cursor()
-            if not menu.exec_(self.mapToGlobal(ev.pos()))\
-               and self.selected_shape_copy:
-                # Cancel the move by deleting the shadow copy.
-                self.selected_shape_copy = None
-                self.repaint()
-        elif ev.button() == Qt.LeftButton and self.selected_shape:
+            if self.hVertex:
+                self.hVertex = None
+        # wzx：去除了右键菜单功能，原有的功能建议通过快捷键进行操作
+        #if ev.button() == Qt.RightButton:
+        #    menu = self.menus[bool(self.selected_shape_copy)]
+        #    self.restore_cursor()
+        #    if not menu.exec_(self.mapToGlobal(ev.pos()))\
+        #       and self.selected_shape_copy:
+        #        # Cancel the move by deleting the shadow copy.
+        #        self.selected_shape_copy = None
+        #        self.repaint()
+        #elif ev.button() == Qt.LeftButton and self.selected_shape:
+        if ev.button() == Qt.LeftButton and self.selectedShape:
             if self.selected_vertex():
                 self.override_cursor(CURSOR_POINT)
             else:
