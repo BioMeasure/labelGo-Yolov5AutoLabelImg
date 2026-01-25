@@ -10,7 +10,7 @@ Pillow
 PyYAML>=5.3.1
 opencv-python==4.3.0.36
 scipy>=1.4.1
-torch>=1.7.0
+torch>=2.10.0
 tqdm>=4.41.0
 torchvision>=0.8.1
 requests
@@ -34,3 +34,4 @@ pyqt5
 lxml
 opencv-python-headless
 qdarkstyle
+wheel>=0.46.2 # not directly required, pinned by Snyk to avoid a vulnerability
